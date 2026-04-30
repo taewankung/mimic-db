@@ -38,7 +38,7 @@ MimicDB คือ TypeScript library สำหรับจัดการ mock d
 ## การติดตั้ง
 
 ```bash
-npm install mimicdb
+npm install mimicdatabox
 ```
 
 ## คำสั่งที่มีให้
@@ -51,7 +51,7 @@ npm test
 ## ตัวอย่างการใช้งาน
 
 ```ts
-import { MimicDB } from "mimicdb";
+import { MimicDB } from "mimicdatabox";
 
 interface UserRecord {
   id: number;

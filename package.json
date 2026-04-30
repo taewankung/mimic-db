@@ -1,5 +1,5 @@
 {
-  "name": "mimicdb",
+  "name": "mimicdatabox",
   "version": "0.1.0",
   "description": "A tiny in-memory mock data database for tests",
   "main": "./dist/index.js",
