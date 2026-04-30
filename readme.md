@@ -32,8 +32,13 @@ MimicDB คือ TypeScript library สำหรับจัดการ mock d
 - `save` แบบ upsert ด้วย `keyField`
 - `update` ข้อมูลที่ตรงเงื่อนไข
 - `remove` ข้อมูลที่ตรงเงื่อนไข
+- adapter สำหรับทำ TypeORM-style repository mock ใน test
 - `seed` และ `reset` state เพื่อใช้ซ้ำใน test หลายเคส
 - clone ข้อมูลก่อนคืนค่า เพื่อกันการแก้ไขจากภายนอกหลุดกลับเข้า store
+
+## เอกสารเพิ่มเติม
+
+- [TypeORM-style Repository Mock](docs/typeorm-mock-repository.md)
 
 ## การติดตั้ง
 
@@ -75,6 +80,15 @@ users.update({ status: "active" }, { status: "inactive" });
 users.reset();
 ```
 
+## TypeORM-style Repository Mock
+
+ดูคู่มือแยกที่ [docs/typeorm-mock-repository.md](docs/typeorm-mock-repository.md) สำหรับ:
+
+- quick start ของ `createTypeOrmRepositoryMock(store, options)`
+- ตัวอย่าง relation hydration และ array input ของ `save()` / `remove()`
+- ตัวอย่าง NestJS service test พร้อม `getRepositoryToken()` และ `@InjectRepository()`
+- สรุป API ของ adapter
+
 ## API หลัก
 
 ### `new MimicDB<T>(options)`
@@ -93,6 +107,7 @@ users.reset();
 - `remove(query)` ลบข้อมูลที่ตรงเงื่อนไขและคืนจำนวนที่ลบ
 - `seed(data)` แทนที่ข้อมูลเริ่มต้นและข้อมูลปัจจุบัน
 - `reset()` คืนค่ากลับไปยังข้อมูลตั้งต้นล่าสุด
+- `createTypeOrmRepositoryMock(store, options)` สร้าง repository mock แนว TypeORM สำหรับ service test
 
 ## โครงสร้างโปรเจ็กต์
 
@@ -102,11 +117,18 @@ users.reset();
 |-- tsconfig.json
 |-- tsconfig.build.json
 |-- tsconfig.test.json
+|-- docs/
+|   `-- typeorm-mock-repository.md
 |-- src/
 |   |-- MimicDB.ts
-|   `-- index.ts
+|   |-- index.ts
+|   `-- typeorm-mock-repository/
+|       |-- createTypeOrmRepositoryMock.ts
+|       `-- index.ts
 |-- test/
-|   `-- MimicDB.test.ts
+|   |-- MimicDB.test.ts
+|   `-- typeorm-mock-repository/
+|       `-- createTypeOrmRepositoryMock.test.ts
 `-- readme.md
 ```
 

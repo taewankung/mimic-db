@@ -26,6 +26,10 @@ export class MimicDB<T extends object> {
     this.records = cloneArray(this.seedData);
   }
 
+  getKeyField(): keyof T | undefined {
+    return this.keyField;
+  }
+
   count(): number {
     return this.records.length;
   }
