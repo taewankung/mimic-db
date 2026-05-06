@@ -1,7 +1,8 @@
 {
   "name": "mimicdatabox",
-  "version": "0.1.1",
+  "version": "0.1.4",
   "description": "A tiny in-memory mock data database for tests",
+  "license": "MIT",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {

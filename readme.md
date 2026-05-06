@@ -39,6 +39,7 @@ MimicDB is a TypeScript library for managing in-memory mock data with a small da
 ## Additional Documentation
 
 - [TypeORM-style Repository Mock](docs/typeorm-mock-repository.md)
+- [GitHub Repository](https://github.com/taewankung/mimic-db)
 
 ## Installation
 
@@ -82,7 +83,7 @@ users.reset();
 
 ## TypeORM-style Repository Mock
 
-See the dedicated guide at [docs/typeorm-mock-repository.md](docs/typeorm-mock-repository.md) for:
+See the dedicated guide at [typeorm-mock-repository.md](https://github.com/taewankung/mimic-db/blob/main/docs/typeorm-mock-repository.md) for:
 
 - a quick start for `createTypeOrmRepositoryMock(store, options)`
 - relation hydration and array input examples for `save()` / `remove()`
