@@ -23,37 +23,37 @@
      /______ /_/ /_||_\ \_\______\
 ```
 
-MimicDB คือ TypeScript library สำหรับจัดการ mock data แบบ in-memory ให้ใช้งานคล้ายฐานข้อมูลขนาดเล็กภายใน test โดยเน้น workflow ที่พบบ่อยใน unit test และ integration test เช่น ค้นหาข้อมูลตาม field, upsert ข้อมูล, update หลายแถว, reset state และควบคุมข้อมูลเริ่มต้นของแต่ละรอบทดสอบ
+MimicDB is a TypeScript library for managing in-memory mock data with a small database-like API for tests. It focuses on common unit test and integration test workflows such as field-based lookup, upsert, bulk updates, state reset, and controlling the initial dataset for each test run.
 
-## ความสามารถหลัก
+## Core Features
 
-- ค้นหาข้อมูลด้วย object query หรือ predicate function
-- ดึงข้อมูลหนึ่งรายการหรือหลายรายการจาก field ต่าง ๆ
-- `save` แบบ upsert ด้วย `keyField`
-- `update` ข้อมูลที่ตรงเงื่อนไข
-- `remove` ข้อมูลที่ตรงเงื่อนไข
-- adapter สำหรับทำ TypeORM-style repository mock ใน test
-- `seed` และ `reset` state เพื่อใช้ซ้ำใน test หลายเคส
-- clone ข้อมูลก่อนคืนค่า เพื่อกันการแก้ไขจากภายนอกหลุดกลับเข้า store
+- Query data with object queries or predicate functions
+- Read one or many records by field values
+- Upsert with `save` using a `keyField`
+- Update records that match a query
+- Remove records that match a query
+- Use a TypeORM-style repository mock adapter in tests
+- Reuse state across tests with `seed` and `reset`
+- Return cloned data to prevent accidental mutation leaks back into the store
 
-## เอกสารเพิ่มเติม
+## Additional Documentation
 
 - [TypeORM-style Repository Mock](docs/typeorm-mock-repository.md)
 
-## การติดตั้ง
+## Installation
 
 ```bash
 npm install mimicdatabox
 ```
 
-## คำสั่งที่มีให้
+## Available Commands
 
 ```bash
 npm run build
 npm test
 ```
 
-## ตัวอย่างการใช้งาน
+## Usage Example
 
 ```ts
 import { MimicDB } from "mimicdatabox";
@@ -82,34 +82,34 @@ users.reset();
 
 ## TypeORM-style Repository Mock
 
-ดูคู่มือแยกที่ [docs/typeorm-mock-repository.md](docs/typeorm-mock-repository.md) สำหรับ:
+See the dedicated guide at [docs/typeorm-mock-repository.md](docs/typeorm-mock-repository.md) for:
 
-- quick start ของ `createTypeOrmRepositoryMock(store, options)`
-- ตัวอย่าง relation hydration และ array input ของ `save()` / `remove()`
-- ตัวอย่าง NestJS service test พร้อม `getRepositoryToken()` และ `@InjectRepository()`
-- สรุป API ของ adapter
+- a quick start for `createTypeOrmRepositoryMock(store, options)`
+- relation hydration and array input examples for `save()` / `remove()`
+- a NestJS service test example with `getRepositoryToken()` and `@InjectRepository()`
+- an adapter API summary
 
-## API หลัก
+## Main API
 
 ### `new MimicDB<T>(options)`
 
-- `initialData`: ข้อมูลตั้งต้นของ store
-- `keyField`: field ที่ใช้สำหรับ `save` แบบ upsert เช่น `id`
+- `initialData`: the initial dataset for the store
+- `keyField`: the field used by `save` for upsert behavior, such as `id`
 
 ### Methods
 
-- `count()` คืนจำนวนข้อมูลทั้งหมด
-- `getAll()` คืนข้อมูลทั้งหมด
-- `find(query?)` คืนข้อมูลที่ตรงเงื่อนไข
-- `findOne(query)` คืนข้อมูลรายการแรกที่ตรงเงื่อนไข
-- `save(record)` เพิ่มหรืออัปเดตข้อมูลตาม `keyField`
-- `update(query, update)` อัปเดตข้อมูลทุก record ที่ตรงเงื่อนไข
-- `remove(query)` ลบข้อมูลที่ตรงเงื่อนไขและคืนจำนวนที่ลบ
-- `seed(data)` แทนที่ข้อมูลเริ่มต้นและข้อมูลปัจจุบัน
-- `reset()` คืนค่ากลับไปยังข้อมูลตั้งต้นล่าสุด
-- `createTypeOrmRepositoryMock(store, options)` สร้าง repository mock แนว TypeORM สำหรับ service test
+- `count()` returns the total number of records
+- `getAll()` returns all records
+- `find(query?)` returns all records that match the query
+- `findOne(query)` returns the first record that matches the query
+- `save(record)` inserts or updates a record using `keyField`
+- `update(query, update)` updates every record that matches the query
+- `remove(query)` removes matching records and returns the number removed
+- `seed(data)` replaces both the seed data and the current data
+- `reset()` restores the latest seeded state
+- `createTypeOrmRepositoryMock(store, options)` creates a TypeORM-style repository mock for service tests
 
-## โครงสร้างโปรเจ็กต์
+## Project Structure
 
 ```text
 .
@@ -132,9 +132,9 @@ users.reset();
 `-- readme.md
 ```
 
-## หมายเหตุการออกแบบ
+## Design Notes
 
-- query แบบ object ใช้การเทียบค่าแบบ exact match ต่อ field
-- query แบบ function เหมาะกับเงื่อนไขที่ซับซ้อนกว่า object query
-- ข้อมูลที่คืนจาก library จะเป็น clone เสมอ เพื่อกัน side effect ระหว่าง test
-- `save` จะ throw error ถ้ากำหนด `keyField` แต่ record ไม่มี field ดังกล่าว
+- Object queries use exact-match comparison per field
+- Function queries are better suited for more complex conditions
+- Data returned by the library is always cloned to prevent test side effects
+- `save` throws an error if `keyField` is configured but the record does not contain that field
