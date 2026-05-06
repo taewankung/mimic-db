@@ -1,4 +1,26 @@
-export type MimicDBQuery<T> = Partial<T> | ((record: T) => boolean);
+export interface MimicDBFieldOperators<T> {
+  in?: readonly T[];
+  not?: MimicDBFieldQuery<T>;
+  contains?: T extends readonly (infer TItem)[] ? TItem : string;
+  startsWith?: string;
+  gt?: T;
+  gte?: T;
+  lt?: T;
+  lte?: T;
+}
+
+export type MimicDBFieldQuery<T> = T | MimicDBFieldOperators<T>;
+
+export type MimicDBObjectQuery<T extends object> = Partial<{
+  [K in keyof T]: MimicDBFieldQuery<T[K]>;
+}> & {
+  and?: readonly MimicDBQuery<T>[];
+  or?: readonly MimicDBQuery<T>[];
+};
+
+export type MimicDBQuery<T extends object> =
+  | MimicDBObjectQuery<T>
+  | ((record: T) => boolean);
 
 export type MimicDBUpdate<T> = Partial<T> | ((record: T) => T);
 
@@ -13,6 +35,78 @@ function cloneValue<T>(value: T): T {
 
 function cloneArray<T>(value: readonly T[]): T[] {
   return structuredClone([...value]);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+const logicalOperatorKeys = new Set(["and", "or"]);
+const fieldOperatorKeys = new Set([
+  "in",
+  "not",
+  "contains",
+  "startsWith",
+  "gt",
+  "gte",
+  "lt",
+  "lte",
+]);
+
+function isFieldOperatorObject(
+  value: unknown,
+): value is MimicDBFieldOperators<unknown> {
+  return (
+    isRecord(value) &&
+    Object.keys(value).some((key) => fieldOperatorKeys.has(key))
+  );
+}
+
+function compareComparableValues(
+  actual: unknown,
+  expected: unknown,
+): number | undefined {
+  if (actual instanceof Date || expected instanceof Date) {
+    if (actual instanceof Date && expected instanceof Date) {
+      return actual.getTime() - expected.getTime();
+    }
+
+    return undefined;
+  }
+
+  if (typeof actual !== typeof expected) {
+    return undefined;
+  }
+
+  if (typeof actual === "number") {
+    const expectedNumber = expected as number;
+
+    if (Number.isNaN(actual) || Number.isNaN(expectedNumber)) {
+      return undefined;
+    }
+
+    return actual - expectedNumber;
+  }
+
+  if (typeof actual === "bigint") {
+    const expectedBigInt = expected as bigint;
+
+    if (actual < expectedBigInt) {
+      return -1;
+    }
+
+    if (actual > expectedBigInt) {
+      return 1;
+    }
+
+    return 0;
+  }
+
+  if (typeof actual === "string") {
+    return actual.localeCompare(expected as string);
+  }
+
+  return undefined;
 }
 
 export class MimicDB<T extends object> {
@@ -124,10 +218,116 @@ export class MimicDB<T extends object> {
       return query(cloneValue(record));
     }
 
-    return Object.entries(query as Record<string, unknown>).every(
-      ([key, value]) => {
-        return Object.is((record as Record<string, unknown>)[key], value);
+    return this.matchesObjectQuery(
+      record as Record<string, unknown>,
+      query as MimicDBObjectQuery<T>,
+    );
+  }
+
+  private matchesObjectQuery(
+    record: Record<string, unknown>,
+    query: MimicDBObjectQuery<T>,
+  ): boolean {
+    const queryRecord = query as Record<string, unknown>;
+    const andQueries = Array.isArray(queryRecord.and)
+      ? (queryRecord.and as readonly MimicDBQuery<T>[])
+      : undefined;
+    const orQueries = Array.isArray(queryRecord.or)
+      ? (queryRecord.or as readonly MimicDBQuery<T>[])
+      : undefined;
+
+    const fieldEntries = Object.entries(queryRecord).filter(([key, value]) => {
+      return !(logicalOperatorKeys.has(key) && Array.isArray(value));
+    });
+
+    const fieldsMatch = fieldEntries.every(([key, value]) => {
+      return this.matchesFieldCondition(record[key], value);
+    });
+
+    const andMatch =
+      andQueries === undefined ||
+      andQueries.every((nestedQuery) => this.matches(record as T, nestedQuery));
+
+    const orMatch =
+      orQueries === undefined ||
+      orQueries.some((nestedQuery) => this.matches(record as T, nestedQuery));
+
+    return fieldsMatch && andMatch && orMatch;
+  }
+
+  private matchesFieldCondition(value: unknown, condition: unknown): boolean {
+    if (isFieldOperatorObject(condition)) {
+      return this.matchesOperatorObject(value, condition);
+    }
+
+    return Object.is(value, condition);
+  }
+
+  private matchesOperatorObject(
+    value: unknown,
+    operators: MimicDBFieldOperators<unknown>,
+  ): boolean {
+    return Object.entries(operators as Record<string, unknown>).every(
+      ([operator, operand]) => {
+        switch (operator) {
+          case "in":
+            return (
+              Array.isArray(operand) &&
+              operand.some((candidate) => Object.is(value, candidate))
+            );
+          case "not":
+            return !this.matchesFieldCondition(value, operand);
+          case "contains":
+            if (typeof value === "string" && typeof operand === "string") {
+              return value.includes(operand);
+            }
+
+            if (Array.isArray(value)) {
+              return value.some((entry) => Object.is(entry, operand));
+            }
+
+            return false;
+          case "startsWith":
+            return typeof value === "string" && typeof operand === "string"
+              ? value.startsWith(operand)
+              : false;
+          case "gt":
+            return this.matchesComparison(
+              value,
+              operand,
+              (result) => result > 0,
+            );
+          case "gte":
+            return this.matchesComparison(
+              value,
+              operand,
+              (result) => result >= 0,
+            );
+          case "lt":
+            return this.matchesComparison(
+              value,
+              operand,
+              (result) => result < 0,
+            );
+          case "lte":
+            return this.matchesComparison(
+              value,
+              operand,
+              (result) => result <= 0,
+            );
+          default:
+            return false;
+        }
       },
     );
+  }
+
+  private matchesComparison(
+    value: unknown,
+    operand: unknown,
+    compare: (result: number) => boolean,
+  ): boolean {
+    const comparison = compareComparableValues(value, operand);
+    return comparison === undefined ? false : compare(comparison);
   }
 }

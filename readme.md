@@ -27,7 +27,7 @@ MimicDB is a TypeScript library for managing in-memory mock data with a small da
 
 ## Core Features
 
-- Query data with object queries or predicate functions
+- Query data with exact match, query operators, or predicate functions
 - Read one or many records by field values
 - Upsert with `save` using a `keyField`
 - Update records that match a query
@@ -80,6 +80,43 @@ users.save({ id: 2, email: "bob@example.com", status: "active" });
 users.update({ status: "active" }, { status: "inactive" });
 users.reset();
 ```
+
+## Query Operators
+
+Use operator objects when a field needs more than an exact match, and use root-level `and` / `or` arrays when you want nested logical composition.
+
+```ts
+const matchedUsers = users.find({
+  status: { in: ["active", "pending"] },
+  email: { not: { contains: "@internal.local" } },
+  and: [
+    { age: { gte: 18 } },
+    {
+      or: [{ tags: { contains: "vip" } }, { email: { startsWith: "admin" } }],
+    },
+  ],
+});
+```
+
+Supported field operators in v1:
+
+- `in`
+- `not`
+- `contains`
+- `startsWith`
+- `gt`
+- `gte`
+- `lt`
+- `lte`
+
+Behavior notes:
+
+- exact match remains the default when a field value is not an operator object
+- multiple operators on the same field are combined with `and`
+- `contains` supports substring matching for strings and exact element lookup for arrays
+- `gt`, `gte`, `lt`, and `lte` support `number`, `string`, `bigint`, and `Date`
+- missing fields, `null`, `undefined`, and type mismatches do not match comparison or string operators
+- v1 operator queries target top-level fields; if you need deep object traversal, keep using a predicate function or the TypeORM-style repository mock `where` support
 
 ## TypeORM-style Repository Mock
 
@@ -135,7 +172,7 @@ See the dedicated guide at [typeorm-mock-repository.md](https://github.com/taewa
 
 ## Design Notes
 
-- Object queries use exact-match comparison per field
+- Object queries support exact-match by default and operator objects for top-level fields
 - Function queries are better suited for more complex conditions
 - Data returned by the library is always cloned to prevent test side effects
 - `save` throws an error if `keyField` is configured but the record does not contain that field
