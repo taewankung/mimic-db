@@ -1,6 +1,6 @@
 # TypeORM-style Repository Mock
 
-`createTypeOrmRepositoryMock(store, options)` เป็น adapter สำหรับทำให้ `MimicDB` ใช้แทน repository แนว TypeORM ได้ง่ายขึ้นใน service test โดยยังเก็บ state และ behavior ไว้ใน store เดียวกัน
+`createTypeOrmRepositoryMock(store, options)` is an adapter that makes it easier to use `MimicDB` as a TypeORM-style repository in service tests while keeping state and behavior in the same store.
 
 ## Quick Start
 
@@ -47,11 +47,11 @@ await repository.delete({ id: 1 });
 
 ## Relations and Entity Transformation
 
-ถ้าต้องการแนบ relation หรือแปลง shape ของ entity ก่อนคืนค่า สามารถส่ง `hydrate(record, context)` ผ่าน options ของ `createTypeOrmRepositoryMock()` ได้ เช่นใช้ `context.relations` เพื่อเลียนแบบการโหลด relation แบบ opt-in
+If you need to attach relations or transform the entity shape before returning it, pass `hydrate(record, context)` through the options of `createTypeOrmRepositoryMock()`. For example, you can use `context.relations` to mimic opt-in relation loading.
 
 ## Array Input Support
 
-รองรับ array input สำหรับ `save()` และ `remove()` ด้วย จึงใช้ seed/update state หลาย record ใน test setup ได้ตรง ๆ
+Array input is supported for both `save()` and `remove()`, so you can seed or update multiple records directly in test setup.
 
 ```ts
 await repository.save([
@@ -157,17 +157,17 @@ test("UsersService returns hydrated active user", async () => {
 });
 ```
 
-รูปแบบนี้ช่วยให้ test ที่ใช้ `@InjectRepository()` เปลี่ยนมาใช้ MimicDB ได้โดยไม่ต้องเขียน method mock ทีละตัว และยังเก็บ behavior ของ query/read/write ไว้ใน store เดียวกัน
+This pattern lets tests that use `@InjectRepository()` switch to MimicDB without hand-writing one mock method at a time, while still keeping query, read, and write behavior in a single store.
 
 ## API Summary
 
-- `create(entityLike)` สร้าง entity shape โดยไม่ persist ลง store
-- `find(options?)` ค้นหาหลาย record ด้วย TypeORM-style options
-- `findBy(where)` ค้นหาหลาย record ด้วย where object โดยตรง
-- `findOne(options)` คืน record แรกที่ตรงเงื่อนไข หรือ `null`
-- `findOneBy(where)` คืน record แรกจาก where object โดยตรง
-- `count(options?)` นับจำนวน record ที่ตรงเงื่อนไข
-- `save(entity | entity[])` upsert ข้อมูลด้วย `MimicDB.save()`
-- `update(criteria, partialEntity)` อัปเดตและคืน `{ affected, records }`
-- `remove(entity | entity[])` ลบตาม entity/key และคืน entity ที่ถูกลบ
-- `delete(criteria)` ลบตามเงื่อนไขและคืน `{ affected }`
+- `create(entityLike)` creates an entity shape without persisting it to the store
+- `find(options?)` finds multiple records using TypeORM-style options
+- `findBy(where)` finds multiple records directly from a where object
+- `findOne(options)` returns the first matching record, or `null`
+- `findOneBy(where)` returns the first matching record from a where object
+- `count(options?)` counts matching records
+- `save(entity | entity[])` upserts data using `MimicDB.save()`
+- `update(criteria, partialEntity)` updates records and returns `{ affected, records }`
+- `remove(entity | entity[])` removes by entity/key and returns the removed entities
+- `delete(criteria)` removes by criteria and returns `{ affected }`
